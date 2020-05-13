@@ -28,7 +28,6 @@ from scipy.optimize import minimize as mini
 from numpy import cos, sin
 
 PROFILING = False
-
 def timeit(method):
     '''
     Decorator which prints the time 
@@ -251,7 +250,7 @@ class Qcircuit(object):
             # Compute the coefficients of the characteristic polynomial.
             # The roots of this polynomial will provide the complex eigenfrequencies
             char_poly = npPoly([np.real(coeff(**kwargs)) for coeff in self._char_poly_coeffs])
-            
+
             # char_poly = remove_multiplicity(char_poly)
         
             # In this case, the variable of the characteristic polynomial is \omega^2

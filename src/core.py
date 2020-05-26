@@ -1,5 +1,4 @@
 import sympy as sp
-import scipy
 from sympy.utilities.lambdify import lambdify
 from sympy import Function
 import numpy as np
@@ -24,9 +23,7 @@ except ImportError:
     from _utility import *
     from plotting_settings import plotting_parameters_show,plotting_parameters_normal_modes
     
-from scipy.optimize import minimize as mini
-from numpy import cos, sin
-
+    
 PROFILING = False
 def timeit(method):
     '''
@@ -174,7 +171,7 @@ class Qcircuit(object):
 
         # define the functions which returns the components of the characteristic polynomial
         # (the roots of which are the eigen-frequencies)
-        self._char_poly_coeffs = [lambdify(self._no_value_components, c, ['numpy']) 
+        self._char_poly_coeffs = [lambdify(self._no_value_components, c, 'numpy') 
             for c in self._network.compute_char_poly_coeffs(is_lossy = (len(self.resistors)>0))]
         
 #self.no_value_components : array de tous les labels non spécifiés
@@ -2564,12 +2561,15 @@ class J(L):
             raise ValueError("Cannot set both use_E and use_I to True")
 
     def _get_Ej(self, i, **kwargs):
-        return (hbar/2./e)**2/(self._get_value(0, **kwargs)*h)*((i+1)%2)
+        return (hbar/2./e)**2/(self._get_value(0, **kwargs)*h)*((i+1)%2) #zero if i odd
 
     def _set_component_lists(self):
         super(L, self)._set_component_lists()
         self._circuit.junctions.append(self)
-    
+        
+    def three_term(self, mode1, mode2, mode3, **kwargs):
+        return 0
+        
     @vectorize_kwargs(exclude = ['mode'])
     def anharmonicity(self, mode, **kwargs):
         r'''Returns the contribution of this junction to the anharmonicity of a given normal mode.
@@ -2698,7 +2698,7 @@ class D(L):
 
         For more details, see https://arxiv.org/pdf/1908.10342.pdf
         '''
-        return self._get_Ej(1, **kwargs)/6*np.absolute(self.zpf(mode1,quantity='flux',**kwargs)
+        return self._get_Ej(1, **kwargs)*np.absolute(self.zpf(mode1,quantity='flux',**kwargs)
                                                        *self.zpf(mode2,quantity='flux',**kwargs)
                                                        *self.zpf(mode3,quantity='flux',**kwargs))
     

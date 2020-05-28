@@ -23,6 +23,16 @@ except ImportError:
     from _utility import *
     from plotting_settings import plotting_parameters_show,plotting_parameters_normal_modes
     
+from sympy.physics.secondquant import Dagger, B, Bd
+
+a = B('a')
+b = B('b')
+p = B('p')
+
+ad = Dagger(a)
+bd = Dagger(b)
+pd = Dagger(p)
+
     
 PROFILING = False
 def timeit(method):
@@ -606,9 +616,6 @@ class Qcircuit(object):
             Tw += j.three_term(mode1, mode2, mode3, **kwargs)
         return Tw
         
-    
-
-        
 
     def f_k_A_chi(self, pretty_print=False, **kwargs):
         r'''Returns the eigenfrequency, loss-rates, anharmonicity, and Kerr parameters of the circuit. 
@@ -829,6 +836,58 @@ class Qcircuit(object):
 
         if return_ops:
             return H, operators
+        return H
+
+    @refuse_vectorize_kwargs(exclude = ['modes','taylor','excitations','return_ops'])
+    def hamiltonian_sym(self, modes=[2, 3, 4], ops = [a, b, p], taylor=4, **kwargs):
+
+        self.hamiltonian_modes = modes
+        self.hamiltonian_taylor = taylor
+
+        fs = self.eigenfrequencies(**kwargs)
+
+        if modes == 'all':
+            modes = range(len(fs))
+        for m in modes:
+            try:
+                fs[m]
+            except IndexError:
+                error_message ="There are only %d modes in the circuit, and you specified mode index %d "%(len(fs),m)
+                error_message +="corresponding to the %d-th mode."%(m+1)
+                # error_message +="\nNote that the numer of modes may change as one sweeps a parameter"
+                # error_message +=" for example if a 0 frequency, spurious mode becomes negative due to "
+                # error_message +="numerical imprecision. Adding a resistance to the circuit may help with this."
+                raise ValueError(error_message)
+
+
+
+        H = 0
+        operators = []
+        phi = [0 for junction in self.junctions]
+        
+        for index,mode in enumerate(modes):
+
+            a = ops[index]
+            operators.append(ops)
+            H += fs[mode]*Dagger(a)*a
+
+            for j, junction in enumerate(self.junctions):
+                # Note that zpf returns the flux in units of phi_0 = hbar/2./e
+                phi[j] += np.real(junction.zpf(quantity='flux',mode=mode, **kwargs))*(a+Dagger(a)) 
+                # a = x+iy => -i*(a-a^) = -i(iy+iy) = --1
+                phi[j] += -1j*np.imag(junction.zpf(quantity='flux',mode=mode, **kwargs))*(a-Dagger(a)) 
+
+        for j, junction in enumerate(self.junctions):
+            n = 2
+            while 2*n <= taylor:
+                EJ = junction._get_Ej(2*n-2, **kwargs)
+                H += (-1)**(n+1)*EJ/factorial(2*n)*phi[j]**(2*n)
+                n += 1
+            n = 1
+            while 2*n+1 <= taylor:
+                EJ = junction._get_Ej(2*n-1, **kwargs)
+                H += EJ/factorial(2*n+1)*phi[j]**(2*n+1)
+                n += 1
         return H
 
     @refuse_vectorize_kwargs(exclude = ['plot','return_fig_ax'])
@@ -2655,7 +2714,7 @@ class D(L):
 
     def _get_Ej(self, i, **kwargs):
         if i%2 == 0:
-            return (-1)**(i//2) * super(D, self)._get_value(i, **kwargs) # to match the cosine developement of a Josephson junction in hamiltonian
+            return (-1)**(i//2+1) * super(D, self)._get_value(i, **kwargs) # to match the developement of a Josephson junction hamiltonian
         else:
             return super(D, self)._get_value(i, **kwargs)
     

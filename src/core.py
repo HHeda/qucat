@@ -597,7 +597,7 @@ class Qcircuit(object):
                         # Note that taking the square root here is fine
                         # since Ks[i, j]~phi_ki^2*phi_kj^2 is necessarily a positive real
                         # since phi_ki,phi_kj are real numbers
-                        Ks[i, j] += 2. * np.sqrt(As[k][i]*As[k][j])
+                        Ks[i, j] += 2. * np.sqrt(As[k][i]*As[k][j]) * (np.sign(self.junctions[k]._get_Ej(2, **kwargs)))
         return Ks
 
     @vectorize_kwargs(exclude = ['mode1', 'mode2', 'mode3'] )
@@ -2714,7 +2714,7 @@ class D(L):
 
     def _get_Ej(self, i, **kwargs):
         if i%2 == 0:
-            return (-1)**(i//2+1) * super(D, self)._get_value(i, **kwargs) # to match the developement of a Josephson junction hamiltonian
+            return (-1)**((i+2)//2+1) * super(D, self)._get_value(i, **kwargs) # to match the developement of a Josephson junction hamiltonian
         else:
             return super(D, self)._get_value(i, **kwargs)
     
@@ -2804,14 +2804,19 @@ class D(L):
         x = [
             np.array([0., 1.]),
             np.array([(1.-pp['D']['width'])/2.,
-                      (1.+pp['D']['width'])/2.]),
+                      (1.+pp['D']['width'])/2.,
+                      (1.-pp['D']['width'])/2., 
+                      (1.-pp['D']['width'])/2.]),
             np.array([(1.-pp['D']['width'])/2.,
-                      (1.+pp['D']['width'])/2.])
+                     (1.+pp['D']['width'])/2.,
+                      (1.-pp['D']['width'])/2., 
+                      (1.-pp['D']['width'])/2.
+                      ])
         ]
         y = [
             np.array([0., 0.]),
-            np.array([-1., 1.])*pp['D']['width']/2.,
-            np.array([1., -1.])*pp['D']['width']/2.
+            np.array([0., 0., -1., 0])*pp['D']['width']/2.,
+            np.array([0., 0., 1., 0])*pp['D']['width']/2.
         ]
         line_type.append('W')
         line_type.append('D')
@@ -2820,10 +2825,15 @@ class D(L):
         # center in x and y
         x = shift(x, -1./2.)
 
-        if self.angle%180. == 0.:
+        if self.angle == WEST:
             return shift(x, self.x_plot_center), shift(y, self.y_plot_center), line_type
-        if self.angle%180. == 90.:
+        elif self.angle == NORTH:
+            return shift(y, self.x_plot_center), shift([-xx for xx in x], self.y_plot_center), line_type
+        elif self.angle == EAST:
+            return shift([-xx for xx in x], self.x_plot_center), shift(y, self.y_plot_center), line_type
+        elif self.angle == SOUTH:
             return shift(y, self.x_plot_center), shift(x, self.y_plot_center), line_type
+
 
 
 class R(Component):

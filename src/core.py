@@ -1,6 +1,5 @@
 import sympy as sp
 from sympy.utilities.lambdify import lambdify
-from sympy import Function
 import numpy as np
 from numpy.polynomial.polynomial import Polynomial as npPoly
 from sympy.core.mul import Mul, Pow, Add
@@ -839,7 +838,7 @@ class Qcircuit(object):
         return H
 
     @refuse_vectorize_kwargs(exclude = ['modes','taylor','excitations','return_ops'])
-    def hamiltonian_sym(self, modes=[2, 3, 4], ops = [a, b, p], taylor=4, **kwargs):
+    def hamiltonian_sym(self, modes=[-3, -2, -1], ops = [a, b, p], taylor=4, **kwargs):
 
         self.hamiltonian_modes = modes
         self.hamiltonian_taylor = taylor

@@ -3513,10 +3513,16 @@ class RequestValueLabelWindow(tk.Toplevel):
         if isinstance(self.component,C):
             info_text = 'Specify label and/or capacitance (in units of Farad)'
             self.value_string = 'Capacitance'
+
         elif isinstance(self.component,J):
             self.value_string = 'Inductance'
             info_text = 'Specify label and/or Josephson inductance (in units of Henry)'
             info_text += '\nNote that L = (hbar/2/e)**2/[Josephson Energy in Joules]'
+
+        elif isinstance(self.component,D):
+            self.value_string = 'Energy'
+            info_text = "Specify at least three labels separated by ',' for the dipole (the 2nd, 3rd and 4th derivatives of the inductance energy)"
+            info_text += '\nDo not specify any value, they have to be passed as kwargs in further computations'
         elif isinstance(self.component,L):
             self.value_string = 'Inductance'
             info_text = 'Specify label and/or inductance (in units of Henry)'
